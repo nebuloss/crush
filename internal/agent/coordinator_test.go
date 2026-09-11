@@ -51,6 +51,12 @@ func (m *mockSessionAgent) Summarize(context.Context, string, fantasy.ProviderOp
 }
 func (m *mockSessionAgent) GenerateTitle(context.Context, string, string) {}
 
+func (m *mockSessionAgent) SideQuestion(context.Context, string, string) (SideQuestionResult, error) {
+	return SideQuestionResult{}, nil
+}
+
+func (m *mockSessionAgent) ClearSideQuestions(string) {}
+
 // newTestCoordinator creates a minimal coordinator for unit testing runSubAgent.
 func newTestCoordinator(t *testing.T, env fakeEnv, providerID string, providerCfg config.ProviderConfig) *coordinator {
 	cfg, err := config.Init(env.workingDir, "", false)
