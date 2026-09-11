@@ -181,6 +181,8 @@ type SessionAgent interface {
 	Summarize(context.Context, string, fantasy.ProviderOptions, func(context.Context, *fantasy.ProviderError) error) error
 	Model() Model
 	GenerateTitle(ctx context.Context, sessionID, userPrompt string)
+	SideQuestion(ctx context.Context, sessionID, question string) (SideQuestionResult, error)
+	ClearSideQuestions(sessionID string)
 }
 
 type Model struct {
@@ -220,6 +222,11 @@ type sessionAgent struct {
 
 	messageQueue   *csync.Map[string, []SessionAgentCall]
 	activeRequests *csync.Map[string, *activeCancel]
+
+	// sideQuestions threads successive /btw exchanges per session. It is
+	// not part of the dispatch machinery: side questions deliberately run
+	// alongside a busy session and mutate no session state.
+	sideQuestions *sideQuestionHistory
 
 	// dispatchMu holds a per-session mutex that serializes the
 	// accepted -> (cancel-on-entry | queued | active) transition in
@@ -294,6 +301,7 @@ func NewSessionAgent(
 		runComplete:          opts.RunComplete,
 		messageQueue:         csync.NewMap[string, []SessionAgentCall](),
 		activeRequests:       csync.NewMap[string, *activeCancel](),
+		sideQuestions:        newSideQuestionHistory(),
 		dispatchMu:           csync.NewMap[string, *sync.Mutex](),
 		acceptedRuns:         csync.NewMap[string, int](),
 		cancelMark:           csync.NewMap[string, uint64](),
