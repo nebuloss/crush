@@ -425,6 +425,12 @@ const (
 
 type Permissions struct {
 	AllowedTools []string `json:"allowed_tools,omitempty" jsonschema:"description=List of tools that don't require permission prompts,example=bash,example=view"`
+	// AllowedCommands removes commands from the bash tool's built-in
+	// blocklist. Entries are matched against the command name only, so
+	// allowing a command also lifts any subcommand rules for it (e.g.
+	// allowing "apt" re-enables "apt install"). Commands allowed here
+	// still go through the normal permission prompt.
+	AllowedCommands []string `json:"allowed_commands,omitempty" jsonschema:"description=List of commands to remove from the bash tool's built-in blocklist. They still require permission prompts unless also listed in allowed_tools,example=ssh,example=curl"`
 }
 
 type TrailerStyle string

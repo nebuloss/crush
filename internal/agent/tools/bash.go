@@ -146,8 +146,8 @@ var bannedCommands = []string{
 	"ufw",
 }
 
-func bashDescription(attribution *config.Attribution, modelID string) string {
-	bannedCommandsStr := strings.Join(bannedCommands, ", ")
+func bashDescription(attribution *config.Attribution, modelID string, allowedCommands []string) string {
+	bannedCommandsStr := strings.Join(effectiveBannedCommands(bannedCommands, allowedCommands), ", ")
 	var out bytes.Buffer
 	if err := bashDescriptionTpl.Execute(&out, bashDescriptionData{
 		BannedCommands:  bannedCommandsStr,
@@ -163,8 +163,8 @@ func bashDescription(attribution *config.Attribution, modelID string) string {
 	return out.String()
 }
 
-func blockFuncs() []shell.BlockFunc {
-	return []shell.BlockFunc{
+func blockFuncs(allowedCommands []string) []shell.BlockFunc {
+	return allowCommands([]shell.BlockFunc{
 		shell.CommandsBlocker(bannedCommands),
 
 		// System package managers
@@ -192,13 +192,13 @@ func blockFuncs() []shell.BlockFunc {
 
 		// `go test -exec` can run arbitrary commands
 		shell.ArgumentsBlocker("go", []string{"test"}, []string{"-exec"}),
-	}
+	}, allowedCommands)
 }
 
-func NewBashTool(permissions permission.Service, workingDir, spillDir string, attribution *config.Attribution, modelID string) fantasy.AgentTool {
+func NewBashTool(permissions permission.Service, workingDir, spillDir string, attribution *config.Attribution, modelID string, allowedCommands []string) fantasy.AgentTool {
 	return fantasy.NewAgentTool(
 		BashToolName,
-		string(bashDescription(attribution, modelID)),
+		string(bashDescription(attribution, modelID, allowedCommands)),
 		func(ctx context.Context, params BashParams, call fantasy.ToolCall) (fantasy.ToolResponse, error) {
 			if params.Command == "" {
 				return fantasy.NewTextErrorResponse("missing command"), nil
@@ -252,7 +252,7 @@ func NewBashTool(permissions permission.Service, workingDir, spillDir string, at
 				bgManager := shell.GetBackgroundShellManager()
 				bgManager.Cleanup()
 				// Use background context so it continues after tool returns
-				bgShell, err := bgManager.Start(context.Background(), execWorkingDir, blockFuncs(), params.Command, params.Description)
+				bgShell, err := bgManager.Start(context.Background(), execWorkingDir, blockFuncs(allowedCommands), params.Command, params.Description)
 				if err != nil {
 					return fantasy.ToolResponse{}, fmt.Errorf("error starting background shell: %w", err)
 				}
@@ -307,7 +307,7 @@ func NewBashTool(permissions permission.Service, workingDir, spillDir string, at
 			// Start with detached context so it can survive if moved to background
 			bgManager := shell.GetBackgroundShellManager()
 			bgManager.Cleanup()
-			bgShell, err := bgManager.Start(context.Background(), execWorkingDir, blockFuncs(), params.Command, params.Description)
+			bgShell, err := bgManager.Start(context.Background(), execWorkingDir, blockFuncs(allowedCommands), params.Command, params.Description)
 			if err != nil {
 				return fantasy.ToolResponse{}, fmt.Errorf("error starting shell: %w", err)
 			}
