@@ -13,10 +13,16 @@ import (
 //
 //	permissions allow <tool> [<tool> ...]
 //	permissions deny <tool> [<tool> ...]
+//	permissions allow-command <command> [<command> ...]
 //
 // "allow" adds tools to the allow-list (tools that skip permission prompts).
 // "deny" hides tools from the agent entirely (options.disabled_tools) — the
 // inverse of allow. Adding the same tool twice is a no-op.
+//
+// "allow-command" removes commands from the bash tool's built-in blocklist
+// (permissions.allowed_commands). It operates on shell commands, not tools:
+// an un-banned command still goes through the normal permission prompt
+// unless "bash" is also allowed.
 //
 // Precedence: deny wins. If a tool appears in both allow and deny, it is
 // still removed from the agent's effective tool set via disabled_tools.
@@ -26,7 +32,7 @@ func handlePermissions(ctx context.Context, args []string, stdin io.Reader, stdo
 		return nil
 	}
 	if len(args) < 2 {
-		return usage(stderr, "usage: permissions allow|deny <tool> [<tool> ...]")
+		return usage(stderr, "usage: permissions allow|deny <tool> [<tool> ...] | allow-command <command> [<command> ...]")
 	}
 
 	switch args[1] {
@@ -34,8 +40,10 @@ func handlePermissions(ctx context.Context, args []string, stdin io.Reader, stdo
 		return permissionsAllow(b, args, stderr)
 	case "deny":
 		return permissionsDeny(b, args, stderr)
+	case "allow-command":
+		return permissionsAllowCommand(b, args, stderr)
 	default:
-		return usage(stderr, fmt.Sprintf("permissions: unknown subcommand %q (expected allow or deny)", args[1]))
+		return usage(stderr, fmt.Sprintf("permissions: unknown subcommand %q (expected allow, deny, or allow-command)", args[1]))
 	}
 }
 
