@@ -1,0 +1,66 @@
+# Fork release: on a tag like v0.97.1-nebuloss.1, build linux/amd64 and
+# windows/amd64 binaries and publish them as a GitHub release.
+#
+# Only tags with a suffix trigger this, so pushing upstream's plain vX.Y.Z
+# tags to the fork does not.
+name: release
+
+on:
+  push:
+    tags: ["v*-*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)build"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      CGO_ENABLED: "0"
+      GOEXPERIMENT: greenteagc
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: Build
+        run: |
+          set -euo pipefail
+          version=${TAG#v}
+          commit=$(git rev-parse HEAD)
+          ldflags="-s -w -X github.com/charmbracelet/crush/internal/version.Version=$version -X github.com/charmbracelet/crush/internal/version.Commit=$commit"
+          mkdir -p dist
+          for os in linux windows; do
+            name=crush_${version}_${os}_x86_64
+            ext=; [ "$os" = windows ] && ext=.exe
+            mkdir -p "build/$name"
+            GOOS=$os GOARCH=amd64 go build -trimpath -ldflags "$ldflags" -o "build/$name/crush$ext" .
+            cp LICENSE.md README.md FORK.md "build/$name/"
+            if [ "$os" = windows ]; then
+              (cd build && zip -qr "../dist/$name.zip" "$name")
+            else
+              tar -C build -czf "dist/$name.tar.gz" "$name"
+            fi
+          done
+          (cd dist && sha256sum * > checksums.txt)
+          ls -l dist
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --verify-tag --title "$TAG" \
+              --notes "Upstream ${TAG%%-*} plus this fork's changes; see FORK.md."
+          fi
