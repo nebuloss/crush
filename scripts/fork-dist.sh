@@ -5,8 +5,9 @@
 #   VERSION=v0.97.1-nebuloss.1 scripts/fork-dist.sh
 #
 # CGO is disabled, so one Linux machine builds every target with the stock Go
-# toolchain. Output goes to dist/: one self-contained binary per target, as
-# crush_<version>_<os>_x86_64[.exe]. GitHub shows each asset's SHA-256.
+# toolchain. Output goes to dist/: one self-contained binary per target, named
+# crush-<os>-<arch>[.exe] (the release tag carries the version, so the
+# latest-release download URL is stable), plus SHA256SUMS.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -25,12 +26,13 @@ mkdir -p dist
 
 for target in linux/amd64 windows/amd64; do
 	os=${target%/*}
-	name=crush_${version}_${os}_x86_64
+	arch=${target#*/}
 	ext=
 	[ "$os" = windows ] && ext=.exe
-	echo "==> $name$ext"
-	GOOS=$os GOARCH=amd64 go build -trimpath -buildvcs=false -ldflags "$ldflags" \
-		-o "dist/$name$ext" .
+	echo "==> crush-$os-$arch$ext"
+	GOOS=$os GOARCH=$arch go build -trimpath -buildvcs=false -ldflags "$ldflags" \
+		-o "dist/crush-$os-$arch$ext" .
 done
 
+(cd dist && sha256sum crush-* > SHA256SUMS)
 ls -l dist
