@@ -65,7 +65,7 @@ yet.
 ### CI
 
 Upstream's workflows rely on Charm's secrets, runners and goreleaser-pro, so
-they are removed here and replaced by `fork-ci.yml` (vet/build/test on Linux
+they are removed here and replaced by `fork-ci.yml` (build/test on Linux
 and Windows) and `fork-release.yml`.
 
 ## Updating to a new upstream release
