@@ -1,5 +1,5 @@
 # Fork release: push a tag like v0.97.1-nebuloss.1 and the release appears,
-# with linux/amd64 and windows/amd64 archives and checksums.
+# with standalone linux/amd64 and windows/amd64 binaries.
 #
 # Only tags with a suffix trigger this, so pushing upstream's plain vX.Y.Z
 # tags to the fork does not.

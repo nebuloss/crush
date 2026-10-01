@@ -12,7 +12,8 @@ so it can be offered upstream as a PR.
 | `patched` | Latest upstream **release** tag + the commits below. Build from here. |
 
 Releases are tagged `v<upstream>-nebuloss.<n>` (e.g. `v0.97.1-nebuloss.1`);
-pushing such a tag publishes linux/amd64 and windows/amd64 binaries.
+pushing such a tag publishes standalone linux/amd64 and windows/amd64
+binaries (`crush_<version>_linux_x86_64`, `..._windows_x86_64.exe`).
 
 ## Changes
 
