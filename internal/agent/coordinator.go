@@ -1664,6 +1664,7 @@ func (c *coordinator) runSubAgent(ctx context.Context, params subAgentParams) (f
 	if err != nil {
 		return fantasy.ToolResponse{}, fmt.Errorf("create session: %w", err)
 	}
+	inheritPermissions(c.permissions, session.ID, params.SessionID)
 
 	// Call session setup function if provided
 	if params.SessionSetup != nil {

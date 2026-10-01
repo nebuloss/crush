@@ -101,6 +101,7 @@ type permissionService struct {
 	pendingRequests       *csync.Map[string, chan bool]
 	autoApproveSessions   map[string]bool
 	autoApproveSessionsMu sync.RWMutex
+	sessionParents        sync.Map // Child session ID -> parent; see session_tree.go.
 	skip                  atomic.Bool
 	allowedTools          []string
 
@@ -162,7 +163,7 @@ func (s *permissionService) GrantPersistent(permission PermissionRequest) bool {
 	// silently flipping later denied calls to allowed.
 	return s.resolve(permission, true, false, func() {
 		s.sessionPermissions.Set(PermissionKey{
-			SessionID: permission.SessionID,
+			SessionID: s.rootSession(permission.SessionID),
 			ToolName:  permission.ToolName,
 			Action:    permission.Action,
 			Path:      permission.Path,
@@ -210,7 +211,7 @@ func (s *permissionService) Request(ctx context.Context, opts CreatePermissionRe
 	})
 
 	s.autoApproveSessionsMu.RLock()
-	autoApprove := s.autoApproveSessions[opts.SessionID]
+	autoApprove := s.autoApproveSessions[opts.SessionID] || s.ancestorAutoApproved(opts.SessionID)
 	s.autoApproveSessionsMu.RUnlock()
 
 	if autoApprove {
@@ -245,7 +246,7 @@ func (s *permissionService) Request(ctx context.Context, opts CreatePermissionRe
 		Params:      opts.Params,
 	}
 
-	if _, ok := s.sessionPermissions.Get(PermissionKey{
+	if ok := s.sessionGranted(PermissionKey{
 		SessionID: permission.SessionID,
 		ToolName:  permission.ToolName,
 		Action:    permission.Action,
