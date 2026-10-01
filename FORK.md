@@ -65,8 +65,11 @@ yet.
 ### CI
 
 Upstream's workflows rely on Charm's secrets, runners and goreleaser-pro, so
-they are removed here and replaced by `fork-ci.yml` (build/test on Linux
-and Windows) and `fork-release.yml`.
+they are removed here. `fork-ci.yml` cross-compiles linux/amd64 and
+windows/amd64 on one Ubuntu runner (`scripts/fork-dist.sh`) and keeps the
+binaries as artifacts; `fork-release.yml` does the same on a `v*-*` tag and
+publishes a GitHub release. Tests are not run in CI; run `go test ./...` on
+the build machine after a rebase.
 
 ## Updating to a new upstream release
 
