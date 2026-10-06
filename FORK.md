@@ -57,6 +57,23 @@ crushrc: `option task-agent-tool bash` (appends).
   sub-agent's first bash call blocks forever under `crush run`, and in the TUI
   "allow for session" covers only the one sub-agent that asked.
 
+### Configurable auto-summarize threshold
+
+Upstream [PR #3666](https://github.com/charmbracelet/crush/pull/3666) by
+@4RH1T3CT0R7, carried as-is until it merges (fixes
+[#3564](https://github.com/charmbracelet/crush/issues/3564), relates to
+[#3620](https://github.com/charmbracelet/crush/issues/3620)). Upstream only
+compacts when 20k tokens are left on windows over 200k, i.e. at 98% of a 1M
+window, so long sessions resend ~900k tokens every turn and rarely compact.
+
+```json
+{ "options": { "auto_summarize_buffer": 500000 } }
+```
+
+`auto_summarize_buffer` is the tokens kept free on windows over 200k (default
+20000); `auto_summarize_ratio` the fraction kept free on smaller windows
+(default 0.2).
+
 ### `SideQuestion` (engine for `/btw`)
 
 Answers one question from a session's context with no tools, one turn, and
