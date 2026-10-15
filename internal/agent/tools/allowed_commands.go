@@ -14,6 +14,20 @@ import (
 // table stay byte-identical to upstream, which keeps this patch applying
 // cleanly across releases.
 
+// allowAll is the allowed_commands entry that lifts the whole blocklist; it
+// matches config.AllowAllCommands.
+const allowAll = "*"
+
+// allowsAll reports whether allowed lifts the whole blocklist.
+func allowsAll(allowed []string) bool {
+	for _, cmd := range allowed {
+		if strings.TrimSpace(cmd) == allowAll {
+			return true
+		}
+	}
+	return false
+}
+
 // allowedCommandSet indexes the commands a user has explicitly un-banned.
 // Blank entries are dropped so a stray empty string in the config cannot
 // match an empty argv.
@@ -35,6 +49,9 @@ func allowedCommandSet(allowed []string) map[string]struct{} {
 // will actually hit, rather than claiming a command is banned when it isn't.
 // The input slice is never mutated.
 func effectiveBannedCommands(banned, allowed []string) []string {
+	if allowsAll(allowed) {
+		return nil
+	}
 	set := allowedCommandSet(allowed)
 	if len(set) == 0 {
 		return banned
@@ -61,6 +78,9 @@ func effectiveBannedCommands(banned, allowed []string) []string {
 // hard block. The call still goes through the normal permission prompt unless
 // the bash tool itself is in permissions.allowed_tools.
 func allowCommands(funcs []shell.BlockFunc, allowed []string) []shell.BlockFunc {
+	if allowsAll(allowed) {
+		return nil
+	}
 	set := allowedCommandSet(allowed)
 	if len(set) == 0 {
 		return funcs

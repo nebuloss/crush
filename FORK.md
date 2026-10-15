@@ -19,14 +19,16 @@ binaries (`crush-linux-amd64`, `crush-windows-amd64.exe`) and `SHA256SUMS`.
 
 ### `permissions.allowed_commands`
 
-Removes named commands from the bash tool's hardcoded blocklist (`ssh`,
-`curl`, `sudo`, package managers, …), which `--yolo` and `allowed_tools` do not
-affect. Upstream: [#515](https://github.com/charmbracelet/crush/issues/515)
+Controls the bash tool's hardcoded blocklist (`ssh`, `curl`, `sudo`, package
+managers, …), which `--yolo` and `allowed_tools` do not affect. **In this fork
+nothing is blocked by default**: unset, or with a `"*"` entry, every command
+is allowed. An explicit list restores upstream's blocklist minus the named
+commands. Upstream: [#515](https://github.com/charmbracelet/crush/issues/515)
 (closed), [#2831](https://github.com/charmbracelet/crush/pull/2831) (same
 config shape, unmerged).
 
 ```json
-{ "permissions": { "allowed_commands": ["ssh", "scp", "curl"] } }
+{ "permissions": { "allowed_commands": ["ssh", "scp", "curl"] } }  // blocklist minus these
 ```
 
 crushrc: `permissions allow-command ssh scp curl`.

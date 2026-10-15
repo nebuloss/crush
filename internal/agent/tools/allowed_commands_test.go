@@ -136,3 +136,22 @@ func TestBashDescriptionReflectsAllowlist(t *testing.T) {
 		t.Error("expected ssh to be absent from the banned list when allowed")
 	}
 }
+
+func TestAllowedCommandsWildcardLiftsEverything(t *testing.T) {
+	t.Parallel()
+
+	for _, argv := range [][]string{{"sudo", "ls"}, {"curl", "x"}, {"apt", "install", "x"}, {"go", "test", "-exec", "x"}} {
+		if blocked([]string{"*"}, argv...) {
+			t.Errorf("%v blocked despite the wildcard", argv)
+		}
+	}
+	if got := effectiveBannedCommands(bannedCommands, []string{" * "}); len(got) != 0 {
+		t.Errorf("effective blocklist with wildcard = %v, want empty", got)
+	}
+	if desc := bashDescription(&config.Attribution{}, "test-model", []string{"*"}); strings.Contains(desc, "Banned commands") {
+		t.Error("description advertises banned commands although none are")
+	}
+	if desc := bashDescription(&config.Attribution{}, "test-model", nil); !strings.Contains(desc, "Banned commands (") {
+		t.Error("description lost the blocklist when nothing is allowed")
+	}
+}

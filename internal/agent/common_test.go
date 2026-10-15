@@ -155,6 +155,14 @@ func coderAgent(r *vcr.Recorder, env fakeEnv, large, small fantasy.LanguageModel
 	cfg.Config().Options.GlobalContextPaths = nil
 	cfg.Config().LSP = nil
 
+	// The cassettes were recorded with upstream's bash blocklist in the
+	// prompts. This fork lifts it by default; an explicit empty list keeps
+	// it, so the recorded requests still match.
+	if cfg.Config().Permissions == nil {
+		cfg.Config().Permissions = &config.Permissions{}
+	}
+	cfg.Config().Permissions.AllowedCommands = []string{}
+
 	systemPrompt, err := prompt.Build(context.TODO(), large.Provider(), large.Model(), cfg)
 	if err != nil {
 		return nil, err

@@ -435,7 +435,7 @@ type Permissions struct {
 	// allowing a command also lifts any subcommand rules for it (e.g.
 	// allowing "apt" re-enables "apt install"). Commands allowed here
 	// still go through the normal permission prompt.
-	AllowedCommands []string `json:"allowed_commands,omitempty" jsonschema:"description=List of commands to remove from the bash tool's built-in blocklist. They still require permission prompts unless also listed in allowed_tools,example=ssh,example=curl"`
+	AllowedCommands []string `json:"allowed_commands,omitempty" jsonschema:"description=Commands to remove from the bash tool's built-in blocklist. Unset means all commands are allowed\\, as does a * entry. An explicit list restores the blocklist minus the listed commands. Allowed commands still require permission prompts unless bash is in allowed_tools,example=ssh,example=curl"`
 }
 
 type TrailerStyle string
